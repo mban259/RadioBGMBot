@@ -54,6 +54,8 @@ async def on_ready():
 def is_radio_personality(user_id):
     global client
     global xpc
+    if setting.mban == user_id:
+        return True
     member = xpc.get_member(user_id)
     for r in member.roles:
         if r.id == setting.radio_role:
