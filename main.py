@@ -52,7 +52,7 @@ class program:
         if await self.playing():
             await self.stop_bgm()
         self.player = voice.create_ffmpeg_player('data/bgm/{0}'.format(bgm_name))
-        self.player.volume = volume
+        self.player.volume = volume * 0.7
         self.player.start()
         return True
 
@@ -100,10 +100,10 @@ class program:
 
     async def set_volume(self, value):
         if self.playing():
-            self.player.volume = value
+            self.player.volume = value * 0.7
             return True
         else:
-            self.volume = value
+            return False
 
     async def help(self, channel):
         debug.log('help')

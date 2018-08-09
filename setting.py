@@ -8,7 +8,7 @@ def load_setting():
         radio_vc = d['radio_vc']
         radio_role = d['radio_role']
         discord_token = d['discord_token']
-        admin = d['mban']
+        admin = d['admin']
 
     with open('data/help/helplist.txt') as f:
         helplist = f.read()
