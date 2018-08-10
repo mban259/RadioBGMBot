@@ -55,6 +55,7 @@ class program:
         self.player = voice.create_ffmpeg_player('data/bgm/{0}'.format(bgm_name))
         self.player.volume = self.volume * 0.5
         self.player.start()
+        self.volume = 1
         return True
 
     async def playing(self):
