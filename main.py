@@ -46,14 +46,14 @@ class program:
         await voice.disconnect()
         return True
 
-    async def start_bgm(self, bgm_name, volume):
+    async def start_bgm(self, bgm_name):
         if not await self.radio_connecting():
             await self.join_radio()
         voice = self.client.voice_client_in(self.xpc_jp)
         if await self.playing():
             await self.stop_bgm()
         self.player = voice.create_ffmpeg_player('data/bgm/{0}'.format(bgm_name))
-        self.player.volume = volume * 0.5
+        self.player.volume = self.volume * 0.5
         self.player.start()
         return True
 
@@ -130,14 +130,14 @@ class program:
         start_r = re.search(r'^\./takashi *start (?P<name>(\s|\S)+\.(mp3|wav))$', message_text)
         if start_r:
             name = str(start_r.group('name'))
-            success = await self.start_bgm(name, self.volume)
+            success = await self.start_bgm(name)
         start_volume_r = re.search(
             r'^\./takashi *start (?P<name>(\s|\S)+\.(mp3|wav)) *(?P<value>(([0-1](\.[0-9]+)?)|2(\.0+)?))$',
             message_text)
         if start_volume_r:
             name = start_volume_r.group('name')
-            volume = float(start_volume_r.group('value'))
-            success = await self.start_bgm(name, volume)
+            self.volume = float(start_volume_r.group('value'))
+            success = await self.start_bgm(name)
         stop_r = re.match(r'^\./takashi *stop$', message_text)
         if stop_r:
             success = await self.stop_bgm()
