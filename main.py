@@ -3,19 +3,20 @@ import debug
 import setting
 import re
 import os
+import asyncio
 
 
-class program:
-    def __init__(self):
-        self.client = discord.Client()
-        setting.load_setting()
+class Program(discord.Client):
+    def init(self):
+        super().__init__()
         self.player = None
         self.volume = 1
 
-    async def on_ready(self):
+    @asyncio.coroutine
+    def on_ready(self):
         debug.log('login')
-        debug.log('id:{0} name:{1}'.format(self.client.user.name, self.client.user.id))
-        self.xpc_jp = self.client.get_server(setting.xpc_jp)
+        debug.log('id:{0} name:{1}'.format(self.user.name, self.user.id))
+        self.xpc_jp = self.get_server(setting.xpc_jp)
 
     def is_radio_personality(self, user_id):
         if setting.admin == user_id:
@@ -31,7 +32,7 @@ class program:
             debug.log('already connected')
             return False
         debug.log('join radio')
-        await self.client.join_voice_channel(self.client.get_channel(setting.radio_vc))
+        await self.join_voice_channel(self.get_channel(setting.radio_vc))
         return True
 
     async def leave_radio(self):
@@ -42,14 +43,14 @@ class program:
             debug.log('stop bgm')
             await self.stop_bgm()
         debug.log('leave radio')
-        voice = self.client.voice_client_in(self.xpc_jp)
+        voice = self.voice_client_in(self.xpc_jp)
         await voice.disconnect()
         return True
 
     async def start_bgm(self, bgm_name):
         if not await self.radio_connecting():
             await self.join_radio()
-        voice = self.client.voice_client_in(self.xpc_jp)
+        voice = self.voice_client_in(self.xpc_jp)
         if await self.playing():
             await self.stop_bgm()
         self.player = voice.create_ffmpeg_player('data/bgm/{0}'.format(bgm_name))
@@ -73,10 +74,10 @@ class program:
             return False
 
     async def radio_connecting(self):
-        if not self.client.is_voice_connected(self.xpc_jp):
+        if not self.is_voice_connected(self.xpc_jp):
             debug.log('not connecting')
             return False
-        voice = self.client.voice_client_in(self.xpc_jp)
+        voice = self.voice_client_in(self.xpc_jp)
         if voice.channel.id == setting.radio_vc:
             debug.log('connecting')
             return True
@@ -97,26 +98,26 @@ class program:
         bgm_list = os.listdir('data/bgm')
         list_text = '\n'.join(bgm_list)
         print(list_text)
-        await self.client.send_message(channel, '```{0}```'.format(list_text))
+        await self.send_message(channel, '```{0}```'.format(list_text))
         return True
 
     async def set_volume(self, value):
-        self.volume = value * 0.5
+
         if self.playing():
             self.player.volume = value * 0.5
             return True
         else:
-
-            return False
+            self.volume = value
+            return True
 
     async def help(self, channel):
         debug.log('help')
-        await self.client.send_message(channel, '```asciidoc\n{0}\n```'.format(setting.helplist))
+        await self.send_message(channel, '```asciidoc\n{0}\n```'.format(setting.helplist))
         return True
 
     async def ping(self, channel):
         debug.log('ping')
-        await self.client.send_message(channel, 'pong')
+        await self.send_message(channel, 'pong')
         return True
 
     async def execute_radio_command(self, message):
@@ -155,42 +156,28 @@ class program:
         if ping_r:
             success = await self.ping(message.channel)
         if success:
-            await self.client.add_reaction(message, '✅')
+            await self.add_reaction(message, '✅')
             debug.log('command:{0}'.format(message_text))
 
-    async def on_message(self, message):
-        if message.author.id == self.client.user.id:
+    @asyncio.coroutine
+    def on_message(self, message):
+        if message.author.id == self.user.id:
             return
         if message.channel.is_private:
             # for direct message
             if self.is_radio_personality(message.author.id):
                 if message.content.startswith('./takashi'):
-                    await self.execute_radio_command(message)
+                    yield from self.execute_radio_command(message)
             return
         if message.channel.server.id == setting.xpc_jp:
             # for xpc jp
             if self.is_radio_personality(message.author.id):
                 if message.content.startswith('./takashi'):
-                    await self.execute_radio_command(message)
+                    yield from self.execute_radio_command(message)
             return
-
-    def run(self):
-        self.client.run(setting.discord_token)
 
 
 setting.load_setting()
-program = program()
 
-
-# なんかうまい方法ないのかしら
-@program.client.event
-async def on_message(message):
-    await program.on_message(message)
-
-
-@program.client.event
-async def on_ready():
-    await program.on_ready()
-
-
-program.run()
+program = Program()
+program.run(setting.discord_token)
