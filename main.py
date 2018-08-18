@@ -7,7 +7,7 @@ import asyncio
 
 
 class Program(discord.Client):
-    def init(self):
+    def __init__(self):
         super().__init__()
         self.player = None
         self.volume = 1
